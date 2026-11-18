@@ -1,0 +1,282 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>كاشير المحل</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f1f3f6;font-family:Arial;color:#222}
+header{background:#1565c0;color:white;padding:20px;text-align:center}
+nav{display:flex;flex-wrap:wrap;background:#fff}
+nav button{flex:1;padding:14px 5px;border:0;background:white;font-size:14px}
+nav button.active{background:#1565c0;color:white}
+main{padding:12px}
+section{display:none}
+section.active{display:block}
+.card{background:white;padding:15px;margin-bottom:12px;border-radius:12px}
+input,button{font-size:16px}
+input{width:100%;padding:12px;margin:6px 0;border:1px solid #ccc;border-radius:7px}
+.action{background:#1565c0;color:white;border:0;padding:12px;border-radius:7px;width:100%;margin-top:7px}
+.danger{background:#d32f2f;color:white;border:0;padding:7px;border-radius:6px}
+.item{padding:12px;border-bottom:1px solid #ddd}
+.total{font-size:22px;font-weight:bold;color:#1565c0}
+.small{color:#666;font-size:13px}
+</style>
+</head>
+<body>
+
+<header>
+<h2>برنامج إدارة المحل</h2>
+<p>المبيعات والمنتجات والديون</p>
+</header>
+
+<nav>
+<button class="active" onclick="show('home',this)">الرئيسية</button>
+<button onclick="show('products',this)">المنتجات</button>
+<button onclick="show('sales',this)">المبيعات</button>
+<button onclick="show('debts',this)">الديون</button>
+</nav>
+
+<main>
+
+<section id="home" class="active">
+<div class="card">
+<h3>ملخص اليوم</h3>
+<p>مبيعات اليوم</p>
+<div class="total" id="todayTotal">0 د.ع</div>
+<p>عدد عمليات البيع: <b id="todayCount">0</b></p>
+</div>
+<div class="card">
+<h3>ملخص الشهر</h3>
+<div class="total" id="monthTotal">0 د.ع</div>
+</div>
+<div class="card">
+<h3>إجمالي الديون المتبقية</h3>
+<div class="total" id="debtTotal">0 د.ع</div>
+</div>
+</section>
+
+<section id="products">
+<div class="card">
+<h3>إضافة منتج</h3>
+<input id="pname" placeholder="اسم المنتج">
+<input id="pprice" type="number" placeholder="السعر بالدينار">
+<input id="pbarcode" placeholder="رقم الباركود">
+<button class="action" onclick="addProduct()">حفظ المنتج</button>
+</div>
+<div class="card">
+<h3>قائمة المنتجات</h3>
+<div id="productList"></div>
+</div>
+</section>
+
+<section id="sales">
+<div class="card">
+<h3>إجراء عملية بيع</h3>
+<input id="search" placeholder="ابحث باسم المنتج أو الباركود" oninput="searchProducts()">
+<div id="searchResults"></div>
+</div>
+<div class="card">
+<h3>سلة المشتريات</h3>
+<div id="cartList"></div>
+<p class="total">المجموع: <span id="cartTotal">0</span> د.ع</p>
+<button class="action" onclick="finishSale()">إتمام البيع نقداً</button>
+<button class="action" onclick="finishDebt()">تسجيل البيع كدين</button>
+</div>
+<div class="card">
+<h3>سجل المبيعات</h3>
+<div id="salesList"></div>
+</div>
+</section>
+
+<section id="debts">
+<div class="card">
+<h3>تسجيل دين</h3>
+<input id="customer" placeholder="اسم الزبون">
+<input id="debtAmount" type="number" placeholder="مبلغ الدين">
+<button class="action" onclick="addDebt()">حفظ الدين</button>
+</div>
+<div class="card">
+<h3>سجل الديون</h3>
+<div id="debtList"></div>
+</div>
+</section>
+
+</main>
+
+<script>
+let products=JSON.parse(localStorage.getItem('products')||'[]');
+let sales=JSON.parse(localStorage.getItem('sales')||'[]');
+let debts=JSON.parse(localStorage.getItem('debts')||'[]');
+let cart=[];
+
+function save(){
+localStorage.setItem('products',JSON.stringify(products));
+localStorage.setItem('sales',JSON.stringify(sales));
+localStorage.setItem('debts',JSON.stringify(debts));
+render();
+}
+
+function show(id,btn){
+document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
+document.getElementById(id).classList.add('active');
+document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+render();
+}
+
+function addProduct(){
+let name=pname.value.trim();
+let price=Number(pprice.value);
+let barcode=pbarcode.value.trim();
+if(!name||price<=0){alert('أدخل اسم المنتج والسعر');return}
+products.push({id:Date.now(),name,price,barcode});
+pname.value='';pprice.value='';pbarcode.value='';
+save();
+alert('تم حفظ المنتج');
+}
+
+function renderProducts(){
+productList.innerHTML=products.map(p=>`
+<div class="item">
+<b>${p.name}</b><br>
+${p.price.toLocaleString()} د.ع
+<br><span class="small">${p.barcode||'بدون باركود'}</span>
+<button class="danger" onclick="deleteProduct(${p.id})">حذف</button>
+</div>`).join('')||'لا توجد منتجات';
+}
+
+function deleteProduct(id){
+if(confirm('حذف المنتج؟')){
+products=products.filter(p=>p.id!==id);
+save();
+}
+}
+
+function searchProducts(){
+let q=search.value.trim().toLowerCase();
+let found=products.filter(p=>
+p.name.toLowerCase().includes(q)||
+(p.barcode||'').includes(q));
+searchResults.innerHTML=found.map(p=>`
+<div class="item">
+${p.name} - ${p.price.toLocaleString()} د.ع
+<button class="action" onclick="addCart(${p.id})">إضافة للسلة</button>
+</div>`).join('');
+}
+
+function addCart(id){
+let p=products.find(x=>x.id===id);
+let item=cart.find(x=>x.id===id);
+if(item)item.qty++;
+else cart.push({...p,qty:1});
+renderCart();
+}
+
+function renderCart(){
+cartList.innerHTML=cart.map(p=>`
+<div class="item">
+${p.name} × ${p.qty}
+<button onclick="changeQty(${p.id},-1)">-</button>
+<button onclick="changeQty(${p.id},1)">+</button>
+</div>`).join('')||'السلة فارغة';
+cartTotal.textContent=cart.reduce((s,p)=>s+p.price*p.qty,0).toLocaleString();
+}
+
+function changeQty(id,n){
+let p=cart.find(x=>x.id===id);
+if(!p)return;
+p.qty+=n;
+if(p.qty<=0)cart=cart.filter(x=>x.id!==id);
+renderCart();
+}
+
+function finishSale(){
+if(!cart.length){alert('السلة فارغة');return}
+let total=cart.reduce((s,p)=>s+p.price*p.qty,0);
+sales.push({items:[...cart],total,date:new Date().toISOString(),type:'نقدي'});
+cart=[];
+renderCart();
+search.value='';
+searchResults.innerHTML='';
+save();
+alert('تم تسجيل البيع');
+}
+
+function finishDebt(){
+if(!cart.length){alert('السلة فارغة');return}
+let name=prompt('اكتب اسم الزبون');
+if(!name)return;
+let total=cart.reduce((s,p)=>s+p.price*p.qty,0);
+debts.push({id:Date.now(),name,amount:total,paid:0,date:new Date().toISOString()});
+sales.push({items:[...cart],total,date:new Date().toISOString(),type:'دين'});
+cart=[];
+renderCart();
+search.value='';
+searchResults.innerHTML='';
+save();
+alert('تم تسجيل الدين');
+}
+
+function addDebt(){
+let name=customer.value.trim();
+let amount=Number(debtAmount.value);
+if(!name||amount<=0){alert('أدخل الاسم والمبلغ');return}
+debts.push({id:Date.now(),name,amount,paid:0,date:new Date().toISOString()});
+customer.value='';
+debtAmount.value='';
+save();
+alert('تم حفظ الدين');
+}
+
+function payDebt(id){
+let d=debts.find(x=>x.id===id);
+let amount=Number(prompt('أدخل المبلغ المدفوع'));
+if(!d||!amount||amount<=0)return;
+d.paid=Math.min(d.amount,d.paid+amount);
+save();
+}
+
+function renderDebts(){
+debtList.innerHTML=debts.map(d=>`
+<div class="item">
+<b>${d.name}</b><br>
+الدين: ${d.amount.toLocaleString()} د.ع<br>
+المدفوع: ${d.paid.toLocaleString()} د.ع<br>
+المتبقي: ${(d.amount-d.paid).toLocaleString()} د.ع<br>
+<span class="small">${new Date(d.date).toLocaleDateString('ar-IQ')}</span>
+${d.paid<d.amount?`<button class="action" onclick="payDebt(${d.id})">تسجيل تسديد</button>`:'<p>تم التسديد</p>'}
+</div>`).join('')||'لا توجد ديون';
+}
+
+function renderSales(){
+salesList.innerHTML=[...sales].reverse().map(s=>`
+<div class="item">
+${s.total.toLocaleString()} د.ع
+- ${s.type}<br>
+<span class="small">${new Date(s.date).toLocaleString('ar-IQ')}</span>
+</div>`).join('')||'لا توجد مبيعات';
+}
+
+function render(){
+renderProducts();
+renderDebts();
+renderSales();
+let now=new Date();
+let today=sales.filter(s=>new Date(s.date).toDateString()===now.toDateString());
+let month=sales.filter(s=>{
+let d=new Date(s.date);
+return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+});
+todayTotal.textContent=today.reduce((s,x)=>s+x.total,0).toLocaleString()+' د.ع';
+todayCount.textContent=today.length;
+monthTotal.textContent=month.reduce((s,x)=>s+x.total,0).toLocaleString()+' د.ع';
+debtTotal.textContent=debts.reduce((s,d)=>s+d.amount-d.paid,0).toLocaleString()+' د.ع';
+}
+
+render();
+</script>
+</body>
+</html>
