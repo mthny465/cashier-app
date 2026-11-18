@@ -3,33 +3,41 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#123b70">
 <title>كاشير المحل</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#f1f3f6;font-family:Arial;color:#222}
-header{background:#1565c0;color:white;padding:20px;text-align:center}
-nav{display:flex;flex-wrap:wrap;background:#fff}
-nav button{flex:1;padding:14px 5px;border:0;background:white;font-size:14px}
+body{margin:0;background:#f1f4f8;color:#222;font-family:Arial}
+header{background:#123b70;color:white;text-align:center;padding:17px}
+nav{display:grid;grid-template-columns:repeat(3,1fr);background:white}
+nav button{border:0;background:white;padding:13px 3px;font-size:14px}
 nav button.active{background:#1565c0;color:white}
-main{padding:12px}
+main{max-width:850px;margin:auto;padding:12px}
 section{display:none}
 section.active{display:block}
-.card{background:white;padding:15px;margin-bottom:12px;border-radius:12px}
-input,button{font-size:16px}
-input{width:100%;padding:12px;margin:6px 0;border:1px solid #ccc;border-radius:7px}
-.action{background:#1565c0;color:white;border:0;padding:12px;border-radius:7px;width:100%;margin-top:7px}
-.danger{background:#d32f2f;color:white;border:0;padding:7px;border-radius:6px}
-.item{padding:12px;border-bottom:1px solid #ddd}
+.card{background:white;padding:14px;margin-bottom:12px;border-radius:12px;box-shadow:0 2px 7px #0001}
+input{width:100%;padding:12px;margin:6px 0;border:1px solid #ccc;border-radius:7px;font-size:16px}
+button{cursor:pointer}
+.action{background:#1565c0;color:white;border:0;padding:12px;border-radius:7px;width:100%;margin:5px 0;font-size:15px}
+.green{background:#16834b}
+.red{background:#c62828;color:white;border:0;padding:8px;border-radius:6px}
+.gray{background:#687789;color:white;border:0;padding:8px;border-radius:6px}
+.item{padding:12px 3px;border-bottom:1px solid #ddd;line-height:1.8}
 .total{font-size:22px;font-weight:bold;color:#1565c0}
-.small{color:#666;font-size:13px}
+.small{font-size:13px;color:#777}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:#edf4ff;padding:12px;border-radius:9px}
+.stat b{display:block;color:#1555a0;font-size:18px;margin-top:7px}
+.row{display:flex;gap:7px}
+.row>*{flex:1;min-width:0}
+video{width:100%;max-height:250px;background:#222}
 </style>
 </head>
 <body>
-
 <header>
 <h2>برنامج إدارة المحل</h2>
-<p>المبيعات والمنتجات والديون</p>
+<p>المبيعات والمخزون والأرباح والديون</p>
 </header>
 
 <nav>
@@ -37,53 +45,69 @@ input{width:100%;padding:12px;margin:6px 0;border:1px solid #ccc;border-radius:7
 <button onclick="show('products',this)">المنتجات</button>
 <button onclick="show('sales',this)">المبيعات</button>
 <button onclick="show('debts',this)">الديون</button>
+<button onclick="show('reports',this)">التقارير</button>
+<button onclick="show('settings',this)">الإعدادات</button>
 </nav>
 
 <main>
-
 <section id="home" class="active">
 <div class="card">
-<h3>ملخص اليوم</h3>
-<p>مبيعات اليوم</p>
-<div class="total" id="todayTotal">0 د.ع</div>
-<p>عدد عمليات البيع: <b id="todayCount">0</b></p>
+<h3>ملخص المحل</h3>
+<div class="stats">
+<div class="stat">مبيعات اليوم<b id="todaySales">0</b></div>
+<div class="stat">ربح اليوم<b id="todayProfit">0</b></div>
+<div class="stat">عدد المنتجات<b id="productCount">0</b></div>
+<div class="stat">قيمة المخزون<b id="stockValue">0</b></div>
+<div class="stat">الديون المتبقية<b id="debtValue">0</b></div>
+<div class="stat">مبيعات الشهر<b id="monthSales">0</b></div>
+</div>
 </div>
 <div class="card">
-<h3>ملخص الشهر</h3>
-<div class="total" id="monthTotal">0 د.ع</div>
-</div>
-<div class="card">
-<h3>إجمالي الديون المتبقية</h3>
-<div class="total" id="debtTotal">0 د.ع</div>
+<h3>تنبيه نقص البضاعة</h3>
+<div id="lowStock"></div>
 </div>
 </section>
 
 <section id="products">
 <div class="card">
-<h3>إضافة منتج</h3>
+<h3 id="formTitle">إضافة منتج</h3>
 <input id="pname" placeholder="اسم المنتج">
-<input id="pprice" type="number" placeholder="السعر بالدينار">
-<input id="pbarcode" placeholder="رقم الباركود">
-<button class="action" onclick="addProduct()">حفظ المنتج</button>
+<div class="row">
+<input id="buy" type="number" placeholder="سعر الجملة">
+<input id="sell" type="number" placeholder="سعر المفرد">
+</div>
+<div class="row">
+<input id="qty" type="number" placeholder="الكمية">
+<input id="barcode" placeholder="الباركود">
+</div>
+<button class="action" onclick="saveProduct()">حفظ المنتج</button>
+<button class="action gray" onclick="scanCamera('barcode')">مسح الباركود بالكاميرا</button>
+<div id="cameraArea" style="display:none">
+<video id="video" autoplay playsinline></video>
+<button class="action red" onclick="stopCamera()">إيقاف الكاميرا</button>
+</div>
+<p class="small">يمكن استخدام قارئ باركود خارجي USB أو Bluetooth، ثم مسح الرمز في خانة البحث بالمبيعات.</p>
 </div>
 <div class="card">
 <h3>قائمة المنتجات</h3>
+<input id="productSearch" placeholder="بحث عن منتج" oninput="renderProducts()">
 <div id="productList"></div>
 </div>
 </section>
 
 <section id="sales">
 <div class="card">
-<h3>إجراء عملية بيع</h3>
-<input id="search" placeholder="ابحث باسم المنتج أو الباركود" oninput="searchProducts()">
-<div id="searchResults"></div>
+<h3>بيع منتج</h3>
+<input id="saleSearch" placeholder="اكتب الاسم أو امسح الباركود" oninput="searchSale()" onkeydown="if(event.key==='Enter')addByBarcode()">
+<button class="action gray" onclick="scanCamera('saleSearch')">مسح بالكاميرا</button>
+<div id="saleResults"></div>
 </div>
 <div class="card">
 <h3>سلة المشتريات</h3>
 <div id="cartList"></div>
 <p class="total">المجموع: <span id="cartTotal">0</span> د.ع</p>
-<button class="action" onclick="finishSale()">إتمام البيع نقداً</button>
-<button class="action" onclick="finishDebt()">تسجيل البيع كدين</button>
+<button class="action green" onclick="finishSale(false)">إتمام البيع نقداً</button>
+<button class="action" onclick="finishSale(true)">تسجيل البيع كدين</button>
 </div>
 <div class="card">
 <h3>سجل المبيعات</h3>
@@ -93,190 +117,435 @@ input{width:100%;padding:12px;margin:6px 0;border:1px solid #ccc;border-radius:7
 
 <section id="debts">
 <div class="card">
-<h3>تسجيل دين</h3>
-<input id="customer" placeholder="اسم الزبون">
-<input id="debtAmount" type="number" placeholder="مبلغ الدين">
-<button class="action" onclick="addDebt()">حفظ الدين</button>
-</div>
-<div class="card">
-<h3>سجل الديون</h3>
+<h3>سجل ديون الزبائن</h3>
 <div id="debtList"></div>
 </div>
 </section>
 
+<section id="reports">
+<div class="card">
+<h3>تقارير المحل</h3>
+<p>إجمالي المبيعات: <b id="allSales">0</b> د.ع</p>
+<p>تكلفة البضاعة المباعة: <b id="allCost">0</b> د.ع</p>
+<p>إجمالي الأرباح: <b id="allProfit">0</b> د.ع</p>
+<p>عدد عمليات البيع: <b id="saleCount">0</b></p>
+<p>قيمة المخزون بسعر الجملة: <b id="inventoryCost">0</b> د.ع</p>
+</div>
+</section>
+
+<section id="settings">
+<div class="card">
+<h3>النسخ الاحتياطي</h3>
+<button class="action" onclick="exportData()">تنزيل نسخة احتياطية</button>
+<input type="file" id="importFile" accept=".json,application/json">
+<button class="action green" onclick="importData()">استرجاع نسخة احتياطية</button>
+</div>
+<div class="card">
+<h3>معلومات البرنامج</h3>
+<p>برنامج إدارة المحل</p>
+<p class="small">البيانات محفوظة على هذا الجهاز في المتصفح.</p>
+</div>
+</section>
 </main>
 
 <script>
-let products=JSON.parse(localStorage.getItem('products')||'[]');
-let sales=JSON.parse(localStorage.getItem('sales')||'[]');
-let debts=JSON.parse(localStorage.getItem('debts')||'[]');
-let cart=[];
+const $=id=>document.getElementById(id);
+const money=n=>Number(n||0).toLocaleString('en-US');
+const read=(key,def)=>{
+try{return JSON.parse(localStorage.getItem(key))||def}
+catch(e){return def}
+};
 
-function save(){
-localStorage.setItem('products',JSON.stringify(products));
-localStorage.setItem('sales',JSON.stringify(sales));
-localStorage.setItem('debts',JSON.stringify(debts));
-render();
+let products=read('cash_products',[]);
+let sales=read('cash_sales',[]);
+let debts=read('cash_debts',[]);
+let cart=[];
+let editingId=null;
+let cameraStream=null;
+let scanTarget='';
+
+function escapeHTML(s){
+return String(s??'').replace(/[&<>"']/g,c=>({
+'&':'&amp;','<':'&lt;','>':'&gt;',
+'"':'&quot;',"'":'&#39;'
+}[c]));
+}
+
+function persist(){
+localStorage.setItem('cash_products',JSON.stringify(products));
+localStorage.setItem('cash_sales',JSON.stringify(sales));
+localStorage.setItem('cash_debts',JSON.stringify(debts));
+renderAll();
 }
 
 function show(id,btn){
 document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
-document.getElementById(id).classList.add('active');
+$(id).classList.add('active');
 document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
 btn.classList.add('active');
-render();
+renderAll();
 }
 
-function addProduct(){
-let name=pname.value.trim();
-let price=Number(pprice.value);
-let barcode=pbarcode.value.trim();
-if(!name||price<=0){alert('أدخل اسم المنتج والسعر');return}
-products.push({id:Date.now(),name,price,barcode});
-pname.value='';pprice.value='';pbarcode.value='';
-save();
+function saveProduct(){
+let name=$('pname').value.trim();
+let buy=Number($('buy').value);
+let sell=Number($('sell').value);
+let qty=Number($('qty').value);
+let barcode=$('barcode').value.trim();
+
+if(!name||buy<0||sell<=0||qty<0||
+$('buy').value===''||$('qty').value===''){
+alert('أدخل الاسم والأسعار والكمية بشكل صحيح');
+return;
+}
+if(products.some(p=>p.barcode&&p.barcode===barcode&&p.id!==editingId)){
+alert('هذا الباركود مستخدم لمنتج آخر');
+return;
+}
+if(editingId!==null){
+let p=products.find(x=>x.id===editingId);
+if(p){
+p.name=name;p.buy=buy;p.sell=sell;
+p.qty=qty;p.barcode=barcode;
+}
+editingId=null;
+$('formTitle').textContent='إضافة منتج';
+}else{
+products.push({id:Date.now(),name,buy,sell,qty,barcode});
+}
+clearProductForm();
+persist();
 alert('تم حفظ المنتج');
 }
 
-function renderProducts(){
-productList.innerHTML=products.map(p=>`
-<div class="item">
-<b>${p.name}</b><br>
-${p.price.toLocaleString()} د.ع
-<br><span class="small">${p.barcode||'بدون باركود'}</span>
-<button class="danger" onclick="deleteProduct(${p.id})">حذف</button>
-</div>`).join('')||'لا توجد منتجات';
+function clearProductForm(){
+['pname','buy','sell','barcode'].forEach(id=>$(id).value='');
+$('qty').value='';
+}
+
+function editProduct(id){
+let p=products.find(x=>x.id===id);
+if(!p)return;
+editingId=id;
+$('formTitle').textContent='تعديل المنتج';
+$('pname').value=p.name;
+$('buy').value=p.buy;
+$('sell').value=p.sell;
+$('qty').value=p.qty;
+$('barcode').value=p.barcode||'';
+window.scrollTo(0,0);
 }
 
 function deleteProduct(id){
-if(confirm('حذف المنتج؟')){
+if(!confirm('هل تريد حذف المنتج؟'))return;
 products=products.filter(p=>p.id!==id);
-save();
-}
+persist();
 }
 
-function searchProducts(){
-let q=search.value.trim().toLowerCase();
+function renderProducts(){
+let q=$('productSearch').value.trim().toLowerCase();
+let list=products.filter(p=>
+p.name.toLowerCase().includes(q)||
+(p.barcode||'').includes(q));
+$('productList').innerHTML=list.map(p=>`
+<div class="item">
+<b>${escapeHTML(p.name)}</b><br>
+سعر الجملة: ${money(p.buy)} د.ع<br>
+سعر المفرد: ${money(p.sell)} د.ع<br>
+ربح القطعة: ${money(p.sell-p.buy)} د.ع<br>
+الكمية: <b>${p.qty}</b><br>
+الباركود: ${escapeHTML(p.barcode||'غير مسجل')}
+<div class="row">
+<button class="action" onclick="editProduct(${p.id})">تعديل</button>
+<button class="red" onclick="deleteProduct(${p.id})">حذف</button>
+</div>
+</div>`).join('')||'لا توجد منتجات';
+}
+
+function searchSale(){
+let q=$('saleSearch').value.trim().toLowerCase();
+if(!q){$('saleResults').innerHTML='';return}
 let found=products.filter(p=>
 p.name.toLowerCase().includes(q)||
 (p.barcode||'').includes(q));
-searchResults.innerHTML=found.map(p=>`
+$('saleResults').innerHTML=found.map(p=>`
 <div class="item">
-${p.name} - ${p.price.toLocaleString()} د.ع
+${escapeHTML(p.name)} - ${money(p.sell)} د.ع
+<br>المتوفر: ${p.qty}
 <button class="action" onclick="addCart(${p.id})">إضافة للسلة</button>
-</div>`).join('');
+</div>`).join('')||'لا يوجد منتج مطابق';
+}
+
+function addByBarcode(){
+let code=$('saleSearch').value.trim();
+let p=products.find(x=>x.barcode===code);
+if(p){
+addCart(p.id);
+$('saleSearch').value='';
+$('saleResults').innerHTML='';
+}else searchSale();
 }
 
 function addCart(id){
 let p=products.find(x=>x.id===id);
+if(!p)return;
 let item=cart.find(x=>x.id===id);
+if((item?item.qty:0)>=p.qty){
+alert('الكمية غير متوفرة بالمخزون');
+return;
+}
 if(item)item.qty++;
-else cart.push({...p,qty:1});
+else cart.push({
+id:p.id,name:p.name,buy:p.buy,
+sell:p.sell,qty:1
+});
+renderCart();
+}
+
+function changeQty(id,n){
+let item=cart.find(x=>x.id===id);
+let p=products.find(x=>x.id===id);
+if(!item||!p)return;
+if(item.qty+n>p.qty){
+alert('لا توجد كمية كافية');
+return;
+}
+item.qty+=n;
+if(item.qty<=0)cart=cart.filter(x=>x.id!==id);
 renderCart();
 }
 
 function renderCart(){
-cartList.innerHTML=cart.map(p=>`
+$('cartList').innerHTML=cart.map(p=>`
 <div class="item">
-${p.name} × ${p.qty}
-<button onclick="changeQty(${p.id},-1)">-</button>
-<button onclick="changeQty(${p.id},1)">+</button>
+${escapeHTML(p.name)} × ${p.qty}
+<div class="row">
+<button class="gray" onclick="changeQty(${p.id},-1)">−</button>
+<button class="action" onclick="changeQty(${p.id},1)">+</button>
+</div>
 </div>`).join('')||'السلة فارغة';
-cartTotal.textContent=cart.reduce((s,p)=>s+p.price*p.qty,0).toLocaleString();
+$('cartTotal').textContent=money(
+cart.reduce((s,p)=>s+p.sell*p.qty,0)
+);
 }
 
-function changeQty(id,n){
-let p=cart.find(x=>x.id===id);
-if(!p)return;
-p.qty+=n;
-if(p.qty<=0)cart=cart.filter(x=>x.id!==id);
-renderCart();
+function finishSale(isDebt){
+if(!cart.length){
+alert('السلة فارغة');
+return;
+}
+let customerName='';
+if(isDebt){
+customerName=prompt('اكتب اسم الزبون');
+if(!customerName||!customerName.trim())return;
+}
+for(let item of cart){
+let p=products.find(x=>x.id===item.id);
+if(!p||p.qty<item.qty){
+alert('الكمية غير كافية: '+item.name);
+return;
+}
+}
+let total=cart.reduce((s,p)=>s+p.sell*p.qty,0);
+let cost=cart.reduce((s,p)=>s+p.buy*p.qty,0);
+let profit=total-cost;
+let date=new Date().toISOString();
+
+let sale={
+id:Date.now(),
+items:cart.map(x=>({...x})),
+total,cost,profit,date,
+type:isDebt?'دين':'نقدي',
+customer:customerName
+};
+
+sales.push(sale);
+cart.forEach(item=>{
+let p=products.find(x=>x.id===item.id);
+p.qty-=item.qty;
+});
+
+if(isDebt){
+debts.push({
+id:Date.now()+1,
+name:customerName.trim(),
+amount:total,
+paid:0,
+date,
+saleId:sale.id
+});
 }
 
-function finishSale(){
-if(!cart.length){alert('السلة فارغة');return}
-let total=cart.reduce((s,p)=>s+p.price*p.qty,0);
-sales.push({items:[...cart],total,date:new Date().toISOString(),type:'نقدي'});
 cart=[];
 renderCart();
-search.value='';
-searchResults.innerHTML='';
-save();
-alert('تم تسجيل البيع');
-}
-
-function finishDebt(){
-if(!cart.length){alert('السلة فارغة');return}
-let name=prompt('اكتب اسم الزبون');
-if(!name)return;
-let total=cart.reduce((s,p)=>s+p.price*p.qty,0);
-debts.push({id:Date.now(),name,amount:total,paid:0,date:new Date().toISOString()});
-sales.push({items:[...cart],total,date:new Date().toISOString(),type:'دين'});
-cart=[];
-renderCart();
-search.value='';
-searchResults.innerHTML='';
-save();
-alert('تم تسجيل الدين');
-}
-
-function addDebt(){
-let name=customer.value.trim();
-let amount=Number(debtAmount.value);
-if(!name||amount<=0){alert('أدخل الاسم والمبلغ');return}
-debts.push({id:Date.now(),name,amount,paid:0,date:new Date().toISOString()});
-customer.value='';
-debtAmount.value='';
-save();
-alert('تم حفظ الدين');
+$('saleSearch').value='';
+$('saleResults').innerHTML='';
+persist();
+alert('تم تسجيل البيع بنجاح');
 }
 
 function payDebt(id){
 let d=debts.find(x=>x.id===id);
-let amount=Number(prompt('أدخل المبلغ المدفوع'));
-if(!d||!amount||amount<=0)return;
-d.paid=Math.min(d.amount,d.paid+amount);
-save();
+if(!d)return;
+let remaining=d.amount-d.paid;
+let amount=Number(prompt('المبلغ المتبقي: '+money(remaining)+' د.ع\nأدخل مبلغ التسديد'));
+if(!amount||amount<=0)return;
+if(amount>remaining){
+alert('المبلغ أكبر من الدين المتبقي');
+return;
+}
+d.paid+=amount;
+persist();
 }
 
 function renderDebts(){
-debtList.innerHTML=debts.map(d=>`
+$('debtList').innerHTML=debts.map(d=>`
 <div class="item">
-<b>${d.name}</b><br>
-الدين: ${d.amount.toLocaleString()} د.ع<br>
-المدفوع: ${d.paid.toLocaleString()} د.ع<br>
-المتبقي: ${(d.amount-d.paid).toLocaleString()} د.ع<br>
+<b>${escapeHTML(d.name)}</b><br>
+الدين: ${money(d.amount)} د.ع<br>
+المدفوع: ${money(d.paid)} د.ع<br>
+المتبقي: <b>${money(d.amount-d.paid)} د.ع</b><br>
 <span class="small">${new Date(d.date).toLocaleDateString('ar-IQ')}</span>
-${d.paid<d.amount?`<button class="action" onclick="payDebt(${d.id})">تسجيل تسديد</button>`:'<p>تم التسديد</p>'}
+${d.paid<d.amount?
+`<button class="action" onclick="payDebt(${d.id})">تسجيل تسديد</button>`:
+'<p>تم التسديد</p>'}
 </div>`).join('')||'لا توجد ديون';
 }
 
 function renderSales(){
-salesList.innerHTML=[...sales].reverse().map(s=>`
+$('salesList').innerHTML=[...sales].reverse().map(s=>`
 <div class="item">
-${s.total.toLocaleString()} د.ع
-- ${s.type}<br>
+<b>${money(s.total)} د.ع</b> - ${escapeHTML(s.type)}<br>
+الربح: ${money(s.profit)} د.ع<br>
+${s.customer?'الزبون: '+escapeHTML(s.customer)+'<br>':''}
 <span class="small">${new Date(s.date).toLocaleString('ar-IQ')}</span>
 </div>`).join('')||'لا توجد مبيعات';
 }
 
-function render(){
+function renderHome(){
+let now=new Date();
+let today=sales.filter(s=>
+new Date(s.date).toDateString()===now.toDateString());
+let month=sales.filter(s=>{
+let d=new Date(s.date);
+return d.getMonth()===now.getMonth()&&
+d.getFullYear()===now.getFullYear();
+});
+$('todaySales').textContent=money(today.reduce((a,s)=>a+s.total,0))+' د.ع';
+$('todayProfit').textContent=money(today.reduce((a,s)=>a+s.profit,0))+' د.ع';
+$('productCount').textContent=products.length;
+$('stockValue').textContent=money(products.reduce((a,p)=>a+p.qty*p.buy,0))+' د.ع';
+$('debtValue').textContent=money(debts.reduce((a,d)=>a+d.amount-d.paid,0))+' د.ع';
+$('monthSales').textContent=money(month.reduce((a,s)=>a+s.total,0))+' د.ع';
+$('lowStock').innerHTML=products.filter(p=>p.qty<=5).map(p=>
+`<div class="item">${escapeHTML(p.name)} - المتبقي ${p.qty}</div>`
+).join('')||'لا توجد منتجات قليلة الكمية';
+}
+
+function renderReports(){
+$('allSales').textContent=money(sales.reduce((a,s)=>a+s.total,0));
+$('allCost').textContent=money(sales.reduce((a,s)=>a+s.cost,0));
+$('allProfit').textContent=money(sales.reduce((a,s)=>a+s.profit,0));
+$('saleCount').textContent=sales.length;
+$('inventoryCost').textContent=money(products.reduce((a,p)=>a+p.qty*p.buy,0));
+}
+
+function renderAll(){
 renderProducts();
 renderDebts();
 renderSales();
-let now=new Date();
-let today=sales.filter(s=>new Date(s.date).toDateString()===now.toDateString());
-let month=sales.filter(s=>{
-let d=new Date(s.date);
-return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
-});
-todayTotal.textContent=today.reduce((s,x)=>s+x.total,0).toLocaleString()+' د.ع';
-todayCount.textContent=today.length;
-monthTotal.textContent=month.reduce((s,x)=>s+x.total,0).toLocaleString()+' د.ع';
-debtTotal.textContent=debts.reduce((s,d)=>s+d.amount-d.paid,0).toLocaleString()+' د.ع';
+renderHome();
+renderReports();
+renderCart();
 }
 
-render();
+function exportData(){
+let data={
+products,sales,debts,
+created:new Date().toISOString()
+};
+let blob=new Blob([JSON.stringify(data,null,2)],{
+type:'application/json'
+});
+let url=URL.createObjectURL(blob);
+let a=document.createElement('a');
+a.href=url;
+a.download='cashier-backup.json';
+a.click();
+URL.revokeObjectURL(url);
+}
+
+function importData(){
+let file=$('importFile').files[0];
+if(!file){
+alert('اختار ملف النسخة الاحتياطية أولاً');
+return;
+}
+let reader=new FileReader();
+reader.onload=()=>{
+try{
+let d=JSON.parse(reader.result);
+if(!Array.isArray(d.products)||
+!Array.isArray(d.sales)||
+!Array.isArray(d.debts)){
+throw new Error();
+}
+if(!confirm('سيتم استبدال البيانات الحالية بالنسخة. هل توافق؟'))return;
+products=d.products;
+sales=d.sales;
+debts=d.debts;
+persist();
+alert('تم استرجاع البيانات');
+}catch(e){
+alert('ملف النسخة الاحتياطية غير صالح');
+}
+};
+reader.readAsText(file);
+}
+
+async function scanCamera(target){
+if(!('BarcodeDetector' in window)){
+alert('مسح الباركود بالكاميرا غير مدعوم في هذا المتصفح. استخدم قارئ باركود خارجي.');
+return;
+}
+if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+alert('الكاميرا تحتاج فتح البرنامج من اتصال آمن HTTPS');
+return;
+}
+try{
+scanTarget=target;
+cameraStream=await navigator.mediaDevices.getUserMedia({
+video:{facingMode:'environment'}
+});
+$('cameraArea').style.display='block';
+$('video').srcObject=cameraStream;
+let detector=new BarcodeDetector();
+cameraTimer=setInterval(async()=>{
+try{
+let codes=await detector.detect($('video'));
+if(codes.length){
+$(scanTarget).value=codes[0].rawValue;
+stopCamera();
+if(scanTarget==='saleSearch')addByBarcode();
+}
+}catch(e){}
+},500);
+}catch(e){
+alert('تعذر فتح الكاميرا. تحقق من إذن الكاميرا.');
+}
+}
+
+function stopCamera(){
+if(cameraTimer)clearInterval(cameraTimer);
+cameraTimer=null;
+if(cameraStream){
+cameraStream.getTracks().forEach(t=>t.stop());
+cameraStream=null;
+}
+$('cameraArea').style.display='none';
+}
+
+renderAll();
 </script>
 </body>
 </html>
