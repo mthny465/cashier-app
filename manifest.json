@@ -1,0 +1,11 @@
+{
+  "name": "برنامج الكاشير",
+  "short_name": "الكاشير",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f1f3f6",
+  "theme_color": "#173b63",
+  "orientation": "portrait",
+  "lang": "ar",
+  "dir": "rtl"
+}
