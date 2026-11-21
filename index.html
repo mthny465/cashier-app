@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#173b63">
+<link rel="manifest" href="manifest.json">
+<title>برنامج الكاشير</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:Arial;background:#eef2f7;margin:0;color:#222}
+header{background:#173b63;color:white;padding:20px;text-align:center}
+main{padding:15px;max-width:700px;margin:auto}
+section{background:white;padding:15px;margin-bottom:15px;border-radius:12px}
+input,button{width:100%;padding:12px;margin:6px 0;border-radius:7px;border:1px solid #ccc;font-size:16px}
+button{background:#1769aa;color:white;border:0}
+.item{padding:10px;border-bottom:1px solid #ddd}
+.total{font-size:22px;font-weight:bold;color:green}
+</style>
+</head>
+<body>
+<header>
+<h2>برنامج إدارة المحل</h2>
+<p>الكاشير والمبيعات والديون</p>
+</header>
+<main>
+<section>
+<h3>إضافة منتج</h3>
+<input id="name" placeholder="اسم المنتج">
+<input id="price" type="number" placeholder="السعر بالدينار">
+<button onclick="addProduct()">حفظ المنتج</button>
+</section>
+<section>
+<h3>المنتجات</h3>
+<div id="products"></div>
+</section>
+<section>
+<h3>سلة المشتريات</h3>
+<div id="cart"></div>
+<p class="total">المجموع: <span id="total">0</span> د.ع</p>
+<button onclick="finishSale()">إتمام البيع</button>
+</section>
+<section>
+<h3>سجل المبيعات</h3>
+<div id="sales"></div>
+</section>
+<section>
+<h3>الديون</h3>
+<input id="debtName" placeholder="اسم الزبون">
+<input id="debtAmount" type="number" placeholder="المبلغ">
+<button onclick="addDebt()">تسجيل دين</button>
+<div id="debts"></div>
+</section>
+</main>
+<script>
+let products=JSON.parse(localStorage.products||"[]");
+let sales=JSON.parse(localStorage.sales||"[]");
+let debts=JSON.parse(localStorage.debts||"[]");
+let cart=[];
+
+function save(){
+localStorage.products=JSON.stringify(products);
+localStorage.sales=JSON.stringify(sales);
+localStorage.debts=JSON.stringify(debts);
+}
+function addProduct(){
+let name=document.getElementById("name").value.trim();
+let price=Number(document.getElementById("price").value);
+if(!name||price<=0)return alert("أدخل الاسم والسعر");
+products.push({name,price});save();render();
+document.getElementById("name").value="";
+document.getElementById("price").value="";
+}
+function addCart(i){cart.push(products[i]);render();}
+function finishSale(){
+if(!cart.length)return alert("السلة فارغة");
+let total=cart.reduce((s,p)=>s+p.price,0);
+sales.push({date:new Date().toLocaleString("ar-IQ"),total});
+cart=[];save();render();alert("تم تسجيل البيع");
+}
+function addDebt(){
+let name=document.getElementById("debtName").value.trim();
+let amount=Number(document.getElementById("debtAmount").value);
+if(!name||amount<=0)return alert("أدخل بيانات الدين");
+debts.push({name,amount});save();render();
+document.getElementById("debtName").value="";
+document.getElementById("debtAmount").value="";
+}
+function render(){
+document.getElementById("products").innerHTML=products.map((p,i)=>
+`<div class="item">${p.name} - ${p.price} د.ع
+<button onclick="addCart(${i})">إضافة للسلة</button></div>`).join("");
+document.getElementById("cart").innerHTML=cart.map(p=>
+`<div class="item">${p.name} - ${p.price} د.ع</div>`).join("");
+document.getElementById("total").textContent=cart.reduce((s,p)=>s+p.price,0);
+document.getElementById("sales").innerHTML=sales.map(s=>
+`<div class="item">${s.date} - ${s.total} د.ع</div>`).join("");
+document.getElementById("debts").innerHTML=debts.map(d=>
+`<div class="item">${d.name} - ${d.amount} د.ع</div>`).join("");
+}
+if("serviceWorker" in navigator){
+window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js"));
+}
+render();
+</script>
+</body>
+</html>
